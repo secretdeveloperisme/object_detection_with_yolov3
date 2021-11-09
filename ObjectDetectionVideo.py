@@ -80,13 +80,14 @@ if __name__ == '__main__':
     cap = cv2.VideoCapture("videos/Driving_Downtown_New_York_City.mp4")
     video = cv2.VideoWriter("output.mp4", -1, 20, (640, 480))
     while True:
-        _, frame = cap.read()
-        height, width, channels = frame.shape
-        blob, outputs = detect_objects(frame, model, output_layers)
-        boxes, confs, class_ids = get_box_dimensions(outputs, height, width)
-        draw_labels(boxes, confs, colors, class_ids, classes, frame, video)
-        # cv2.imshow("Transportation", frame)
-        key = cv2.waitKey(1)
-        if key == 27:
-            break
+        crt, frame = cap.read()
+        if crt:
+            height, width, channels = frame.shape
+            blob, outputs = detect_objects(frame, model, output_layers)
+            boxes, confs, class_ids = get_box_dimensions(outputs, height, width)
+            draw_labels(boxes, confs, colors, class_ids, classes, frame, video)
+            # cv2.imshow("Transportation", frame)
+            key = cv2.waitKey(1)
+            if key == 27:
+                break
     cap.release()
