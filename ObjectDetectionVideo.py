@@ -63,6 +63,7 @@ def get_box_dimensions(outputs, height, width):
 
 def draw_labels(boxes, confs, colors, class_ids, classes, img, video):
     indexes = cv2.dnn.NMSBoxes(boxes, confs, 0.5, 0.4)
+    print(boxes)
     font = cv2.QT_FONT_BLACK
     for i in range(len(boxes)):
         if i in indexes:
@@ -78,7 +79,8 @@ def draw_labels(boxes, confs, colors, class_ids, classes, img, video):
 if __name__ == '__main__':
     model, classes, colors, output_layers = load_yolo()
     cap = cv2.VideoCapture("videos/Driving_Downtown_New_York_City.mp4")
-    video = cv2.VideoWriter("output.mp4", -1, 20, (640, 480))
+    fourcc = cv2.VideoWriter_fourcc(*"XVID")
+    video = cv2.VideoWriter("output.avi", fourcc, 20, (640, 480))
     while True:
         crt, frame = cap.read()
         if crt:
@@ -87,7 +89,9 @@ if __name__ == '__main__':
             boxes, confs, class_ids = get_box_dimensions(outputs, height, width)
             draw_labels(boxes, confs, colors, class_ids, classes, frame, video)
             # cv2.imshow("Transportation", frame)
-            key = cv2.waitKey(1)
-            if key == 27:
-                break
+            # key = cv2.waitKey(1)
+            # if key == 27:
+            #     break
+        else:
+            break
     cap.release()
