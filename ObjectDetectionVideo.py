@@ -61,37 +61,49 @@ def get_box_dimensions(outputs, height, width):
     return boxes, confs, class_ids
 
 
-def draw_labels(boxes, confs, colors, class_ids, classes, img, video):
+def draw_labels(boxes, confs, colors, class_ids, classes, img):
     indexes = cv2.dnn.NMSBoxes(boxes, confs, 0.5, 0.4)
-    print(boxes)
-    font = cv2.QT_FONT_BLACK
+    font = cv2.QT_FONT_NORMAL
+    font_class_scale = 0.6
+    font_conf_scale = 0.3
+    objects = []
     for i in range(len(boxes)):
         if i in indexes:
             x, y, w, h = boxes[i]
             label = str(classes[class_ids[i]])
+            objects.append(label)
             color = colors[i]
-            cv2.rectangle(img, (x, y), (x + w, y + h), color, 2)
-            cv2.putText(img, label, (x, y - 5), font, 1, color, 1)
-            cv2.putText(img, str(round((confs[0]*100), 2))+"%", (x + w//2, y - 5), font, 1, color, 1)
-    video.write(img)
+            cv2.rectangle(img, (x, y), (x + w, y + h), color, 1)
+            cv2.putText(img, label, (x, y - 5), font, font_class_scale, color, 1)
+            cv2.putText(img, str(round((confs[0]*100), 2))+"%", (x, y +h + 10), font, font_conf_scale, color, 1)
+    unique_classes, amount_unique_classes = np.unique(objects, return_counts=True)
+    y = 0
+    for i, c in enumerate(unique_classes):
+        y += 15
+        cv2.putText(img, "{}:{} ".format(c, amount_unique_classes[i]), (0, y),
+                    font, font_class_scale, colors[classes.index(c)], 1)
 
 
 if __name__ == '__main__':
     model, classes, colors, output_layers = load_yolo()
     cap = cv2.VideoCapture("videos/Driving_Downtown_New_York_City.mp4")
-    fourcc = cv2.VideoWriter_fourcc(*"XVID")
-    video = cv2.VideoWriter("output.avi", fourcc, 20, (640, 480))
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
+    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+    video = cv2.VideoWriter("output/output.mp4", fourcc, 10.0, (640, 360))
     while True:
         crt, frame = cap.read()
         if crt:
             height, width, channels = frame.shape
             blob, outputs = detect_objects(frame, model, output_layers)
             boxes, confs, class_ids = get_box_dimensions(outputs, height, width)
-            draw_labels(boxes, confs, colors, class_ids, classes, frame, video)
-            # cv2.imshow("Transportation", frame)
-            # key = cv2.waitKey(1)
-            # if key == 27:
-            #     break
+            draw_labels(boxes, confs, colors, class_ids, classes, frame)
+            video.write(frame)
+            # cv2.imshow("Tracking Traffic", frame)
+            key = cv2.waitKey(1)
+            if key == 27:
+                break
         else:
             break
+    video.release()
     cap.release()
