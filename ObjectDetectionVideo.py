@@ -1,7 +1,13 @@
 import cv2
 import numpy as np
 
-# lo
+cap = cv2.VideoCapture("videos/Driving_Downtown_New_York_City.mp4")
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
+fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+video_writer = cv2.VideoWriter("output/output.mp4", fourcc, 10.0, (640, 360))
+
+
 def load_yolo():
     net = cv2.dnn.readNet("yolo/yolov3.weights", "yolo/yolov3.cfg")
     classes = []
@@ -14,14 +20,6 @@ def load_yolo():
     return net, classes, colors, output_layers
 
 
-def load_image(img_path):
-    # image loading
-    img = cv2.imread(img_path)
-    img = cv2.resize(img, None, fx=0.2, fy=0.2)
-    height, width, channels = img.shape
-    return img, height, width, channels
-
-
 def display_blob(blob):
     '''
       Three images each for RED, GREEN, BLUE channel
@@ -31,11 +29,15 @@ def display_blob(blob):
             cv2.imshow(str(n), imgb)
 
 
-def detect_objects(img, net, outputLayers):
-    blob = cv2.dnn.blobFromImage(img, scalefactor=1/255, size=(320, 320), mean=(0, 0, 0), swapRB=True, crop=False)
+def preprocessing_image(img):
+    blob = cv2.dnn.blobFromImage(img, scalefactor=1 / 255, size=(320, 320), mean=(0, 0, 0), swapRB=True, crop=False)
+    return blob
+
+def detect_objects(blob, net, outputLayers):
     net.setInput(blob)
     outputs = net.forward(outputLayers)
-    return blob, outputs
+    return outputs
+
 
 
 def get_box_dimensions(outputs, height, width):
@@ -85,24 +87,20 @@ def draw_labels(boxes, confs, colors, class_ids, classes, img):
 
 if __name__ == '__main__':
     model, classes, colors, output_layers = load_yolo()
-    cap = cv2.VideoCapture("videos/Driving_Downtown_New_York_City.mp4")
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
-    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-    video = cv2.VideoWriter("output/output.mp4", fourcc, 10.0, (640, 360))
     while True:
         crt, frame = cap.read()
         if crt:
             height, width, channels = frame.shape
-            blob, outputs = detect_objects(frame, model, output_layers)
+            blob = preprocessing_image(frame)
+            outputs = detect_objects(blob, model, output_layers)
             boxes, confs, class_ids = get_box_dimensions(outputs, height, width)
             draw_labels(boxes, confs, colors, class_ids, classes, frame)
-            video.write(frame)
+            video_writer.write(frame)
             cv2.imshow("Tracking Traffic", frame)
             key = cv2.waitKey(1)
             if key == 27:
                 break
         else:
             break
-    video.release()
+    video_writer.release()
     cap.release()
