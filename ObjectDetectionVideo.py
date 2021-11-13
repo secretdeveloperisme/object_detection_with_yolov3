@@ -1,13 +1,12 @@
 import cv2
 import numpy as np
 
-# Load yolo
+# lo
 def load_yolo():
-    net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
+    net = cv2.dnn.readNet("yolo/yolov3.weights", "yolo/yolov3.cfg")
     classes = []
-    with open("coco.names", "r") as f:
+    with open("yolo/coco.names", "r") as f:
         classes = [line.strip() for line in f.readlines()]
-
     layers_names = net.getLayerNames()
     output_layers = [layers_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
     print(output_layers)
@@ -99,7 +98,7 @@ if __name__ == '__main__':
             boxes, confs, class_ids = get_box_dimensions(outputs, height, width)
             draw_labels(boxes, confs, colors, class_ids, classes, frame)
             video.write(frame)
-            # cv2.imshow("Tracking Traffic", frame)
+            cv2.imshow("Tracking Traffic", frame)
             key = cv2.waitKey(1)
             if key == 27:
                 break
