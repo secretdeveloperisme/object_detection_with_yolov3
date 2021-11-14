@@ -30,8 +30,9 @@ def display_blob(blob):
 
 
 def preprocessing_image(img):
-    blob = cv2.dnn.blobFromImage(img, scalefactor=1 / 255, size=(320, 320), mean=(0, 0, 0), swapRB=True, crop=False)
+    blob = cv2.dnn.blobFromImage(img, scalefactor=1 / 255, size=(320, 320), swapRB=True, crop=False)
     return blob
+
 
 def detect_objects(blob, net, outputLayers):
     net.setInput(blob)
@@ -49,7 +50,7 @@ def get_box_dimensions(outputs, height, width):
             scores = detect[5:]
             class_id = np.argmax(scores)
             conf = scores[class_id]
-            if conf > 0.3:
+            if conf > 0.5:
                 center_x = int(detect[0] * width)
                 center_y = int(detect[1] * height)
                 w = int(detect[2] * width)
@@ -62,8 +63,13 @@ def get_box_dimensions(outputs, height, width):
     return boxes, confs, class_ids
 
 
+def non_maximum_supression(boxes, confs):
+    indexes = cv2.dnn.NMSBoxes(boxes, confs, score_threshold=0.5, nms_threshold=0.4)
+    return indexes
+
+
 def draw_labels(boxes, confs, colors, class_ids, classes, img):
-    indexes = cv2.dnn.NMSBoxes(boxes, confs, 0.5, 0.4)
+    indexes = non_maximum_supression(boxes=boxes, confs=confs)
     font = cv2.QT_FONT_NORMAL
     font_class_scale = 0.6
     font_conf_scale = 0.3
@@ -73,7 +79,7 @@ def draw_labels(boxes, confs, colors, class_ids, classes, img):
             x, y, w, h = boxes[i]
             label = str(classes[class_ids[i]])
             objects.append(label)
-            color = colors[i]
+            color = colors[class_ids[i]]
             cv2.rectangle(img, (x, y), (x + w, y + h), color, 1)
             cv2.putText(img, label, (x, y - 5), font, font_class_scale, color, 1)
             cv2.putText(img, str(round((confs[0]*100), 2))+"%", (x, y +h + 10), font, font_conf_scale, color, 1)
